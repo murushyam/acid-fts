@@ -1,0 +1,4 @@
+Phase,Model,Target,Lag,MAE,RMSE
+Phase_5_Champion,Champion_FuzzyVMD,fire_weather_index,14,1.6605566116624606,2.07723188562183
+Phase_5_Champion,Champion_LSTM,firms_fire_mask,14,0.8717105263157895,1.4700966670686373
+Phase_5_Champion,Champion_LSTM,modis_burn_date,14,0.3136405326229961,0.8209212872592048

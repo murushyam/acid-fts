@@ -1,0 +1,4 @@
+Phase,Model,Target,Lag,MAE,RMSE
+Phase_6_AdaptiveStacking,Adaptive_XGB_Stacking,fire_weather_index,30,1.5391041384888977,1.9372194682445865
+Phase_6_AdaptiveStacking,Adaptive_XGB_Stacking,firms_fire_mask,30,0.32894736842105265,0.7209277648317224
+Phase_6_AdaptiveStacking,Adaptive_XGB_Stacking,modis_burn_date,30,0.388444945064117,0.6766021179256989

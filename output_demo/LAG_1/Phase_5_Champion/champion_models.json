@@ -1,0 +1,5 @@
+{
+    "fire_weather_index": "LR",
+    "firms_fire_mask": "Causal",
+    "modis_burn_date": "LSTM"
+}

@@ -1,0 +1,13 @@
+Phase,Model,Target,Lag,MAE,RMSE
+Phase_1_Baseline,LR,fire_weather_index,14,1.8033192013978452,2.245912683580256
+Phase_1_Baseline,LR,firms_fire_mask,14,0.9978070175438597,1.4926721593968972
+Phase_1_Baseline,LR,modis_burn_date,14,0.540314464251902,0.8479336537415312
+Phase_1_Baseline,RF,fire_weather_index,14,1.692368446039526,2.1196425106461785
+Phase_1_Baseline,RF,firms_fire_mask,14,1.0339912280701755,1.4445147306336283
+Phase_1_Baseline,RF,modis_burn_date,14,0.5396029030636215,0.8167741505832401
+Phase_1_Baseline,LSTM,fire_weather_index,14,1.6782722962007188,2.1064371713646777
+Phase_1_Baseline,LSTM,firms_fire_mask,14,0.8717105263157895,1.4700966670686373
+Phase_1_Baseline,LSTM,modis_burn_date,14,0.3136405326229961,0.8209212872592048
+Phase_1_Baseline,Ensemble,fire_weather_index,14,1.6614485446906748,2.0772252201152384
+Phase_1_Baseline,Ensemble,firms_fire_mask,14,0.9802631578947368,1.4501965988922316
+Phase_1_Baseline,Ensemble,modis_burn_date,14,0.4643371550727829,0.7957375202987231

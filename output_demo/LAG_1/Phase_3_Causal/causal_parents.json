@@ -1,0 +1,32 @@
+{
+    "fire_weather_index": [
+        "HDWI",
+        "UINFDR",
+        "build_up_index",
+        "burning_index",
+        "drought_code",
+        "duff_moisture_code",
+        "energy_release_component",
+        "fine_fuel_moisture_code",
+        "fire_danger_index",
+        "fire_weather_index",
+        "initial_spread_index",
+        "keetch_byram_drought_index",
+        "relative_humidity_mean",
+        "soil_moisture_mean",
+        "specific_humidity_mean",
+        "temperature_2m_mean",
+        "vpd_mean",
+        "wind_speed_mean"
+    ],
+    "firms_fire_mask": [
+        "firms_fire_mask",
+        "temperature_2m_mean",
+        "wind_speed_mean"
+    ],
+    "modis_burn_date": [
+        "modis_burn_date",
+        "temperature_2m_mean",
+        "wind_speed_mean"
+    ]
+}
