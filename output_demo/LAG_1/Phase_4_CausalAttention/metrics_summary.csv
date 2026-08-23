@@ -1,4 +1,0 @@
-Phase,Model,Target,Lag,MAE,RMSE
-Phase_4_CausalAttention,Causal_Attention_LSTM,fire_weather_index,1,1.9666685407098972,2.4595762391564278
-Phase_4_CausalAttention,Causal_Attention_LSTM,firms_fire_mask,1,1.2719298245614035,1.444894216974244
-Phase_4_CausalAttention,Causal_Attention_LSTM,modis_burn_date,1,0.4798620464116858,0.7877332300491473

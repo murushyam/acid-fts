@@ -1,5 +1,0 @@
-{
-    "fire_weather_index": "FuzzyVMD",
-    "firms_fire_mask": "LSTM",
-    "modis_burn_date": "LSTM"
-}

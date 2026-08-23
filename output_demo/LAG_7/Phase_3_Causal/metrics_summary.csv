@@ -1,4 +1,0 @@
-Phase,Model,Target,Lag,MAE,RMSE
-Phase_3_Causal,Causal_S_Learner,fire_weather_index,7,1.6655387264284438,2.089792467804003
-Phase_3_Causal,Causal_S_Learner,firms_fire_mask,7,0.9660087719298246,1.4361406616345072
-Phase_3_Causal,Causal_S_Learner,modis_burn_date,7,0.49046387066146313,0.8034205185845039
