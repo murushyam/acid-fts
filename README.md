@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Framework](https://img.shields.io/badge/framework-PACI--ICPDA-orange.svg)]()
 
-This repository implements the **Physics-based Adaptive Causal Informed Fuzzy Time Series prediction based on the Improved Cumulative Probabilistic Distribution Approach (PACI-ICPDA)** wildfire forecasting pipeline. 
+This repository implements the **Adaptive Causal-Informed and Domain-Constrained Fuzzy Time Series Forecasting for Multi-Horizon Forest Fire Danger and Extremes (ACID-FTS)** wildfire forecasting pipeline. 
 
 PACI-ICPDA is a modular, multi-phase mathematical forecasting framework designed to predict critical fire weather variables—specifically the **Fire Weather Index (FWI)**, **Active Fire Count**, and **Burnt Area**—across multiple look-ahead forecast horizons (lags of 1, 7, 14, and 30 days).
 
