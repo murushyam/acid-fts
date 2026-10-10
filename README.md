@@ -1,4 +1,4 @@
-# PACI-ICPDA Wildfire Forecasting Framework
+# Adaptive Causal-Informed and Domain-Constrained Fuzzy Time Series Forecasting for Multi-Horizon Forest Fire Danger and Extremes (ACID-FTS) - Wildfire Forecasting Framework
 
 [![Python Version](https://img.shields.io/badge/python-3.8%20%7C%203.9-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -10,7 +10,7 @@ PACI-ICPDA is a modular, multi-phase mathematical forecasting framework designed
 
 ---
 
-## 9-Phase Master Pipeline Architecture
+## 7-Phase Master Pipeline Architecture
 
 The framework coordinates nine distinct forecasting and validation phases:
 
