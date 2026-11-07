@@ -1,157 +1,154 @@
 """
-PACI-ICPDA Framework - Main Master Pipeline Orchestrator
-Coordinates the nine phases of the wildfire forecasting and validation pipeline.
+ACID-FTS Framework - Master 7-Phase Pipeline Orchestrator
+=========================================================
+Executes the complete 7-Phase ACID-FTS (Adaptive Causal-Informed and Domain-Constrained
+Fuzzy Time Series) workflow across multi-horizon lead times L in {1, 2, 7, 14, 30} days
+and biogeographic forest divisions (Bandhavgarh, Similipal, Chamba).
 
-Runs:
-  Phase 1: Baseline Ensemble Prediction
-  Phase 2: VMD-Fuzzy Residual Learning (ICPDA)
-  Phase 3: Causal Discovery & Meta-Learners
-  Phase 4: Deep Causal Attention LSTM Hybrid
-  Phase 5: Target-Specific Champion Assembly
-  Phase 6: Adaptive Stacking (Meta-XGBoost)
-  Phase 7: Probabilistic Interval Calibration
-  Phase 8: Conformal analog forecasting and 1095-day projections
-  Phase 9: Wilcoxon signed-rank statistical validation
+Usage:
+    python run_pipeline.py --region bandhavgarh --lags 1 2 7 14 30
 """
 
+import argparse
 import os
-import sys
-import numpy as np
+import time
 import pandas as pd
 import config
-from data_loader import load_dataset, prepare_lagged_data, get_temporal_splits
-from models.baseline import run_phase_1
-from models.fuzzy_vmd import run_phase_2
-from models.causal_discovery import run_phase_3
-from models.causal_attention import run_phase_4
-from models.champion import run_phase_5
-from models.adaptive_stacking import run_phase_6
-from models.conformal_intervals import run_phase_7
-from models.analog_projections import run_phase_8
-from models.stat_validation import run_phase_9
-from utils.plotting import plot_stacked_bar_metrics
+from data_loader import load_datacube, create_multi_horizon_splits
+from models.phase1_baseline import run_phase_1
+from models.phase2_vmd_fuzzy import run_phase_2
+from models.phase3_causal_metalearners import run_phase_3
+from models.phase4_causal_attention import run_phase_4
+from models.phase5_dynamic_routing import run_phase_5
+from models.phase6_adaptive_stacking import run_phase_6
+from models.phase7_conformal_calibration import run_phase_7
+from utils.plotting import plot_grouped_horizon_bars, plot_conformal_intervals
+
+
+def run_acid_fts_pipeline(region_key=config.DEFAULT_REGION, lags=None, save_outputs=False):
+    """
+    Executes Phases 1 through 7 of the ACID-FTS architecture sequentially
+    without temporal data leakage.
+    """
+    if lags is None:
+        lags = config.LAGS
+
+    region_info = config.REGIONS[region_key]
+    print("=" * 80)
+    print(f"ACID-FTS 7-Phase Multi-Horizon Forecasting Framework")
+    print(f"Region: {region_info['name']} ({region_info['climate']})")
+    print(f"Horizons: {lags} days | Targets: {config.TARGET_COLS}")
+    print("=" * 80)
+
+    start_time = time.time()
+    df = load_datacube(region_key=region_key)
+
+    all_metrics_list = []
+    all_conformal_list = []
+    all_wilcoxon_list = []
+
+    for lag in lags:
+        print(f"\n>>> Processing Forecast Horizon L = t+{lag}d <<<")
+        splits = create_multi_horizon_splits(df, lag=lag)
+
+        # Phase 1: Baseline Statistical, ML, DL & 4-Model Ensemble
+        p1_preds, df_m1 = run_phase_1(splits, lag)
+
+        # Phase 2: VMD-Fuzzy Residual Learning (ICPDA)
+        p2_preds, df_m2 = run_phase_2(splits, p1_preds, lag)
+
+        # Phase 3: Regime-Switching Causal Meta-Learners (S-Learner & Propensity T-Learner)
+        p3_preds, df_m3 = run_phase_3(df, splits, lag)
+
+        # Phase 4: Deep Causal Attention Hybrid (Bahdanau Query Attention + XGBoost)
+        p4_preds, df_m4 = run_phase_4(splits, p3_preds["causal_parents"], lag)
+
+        # Merge candidate predictions for Phase 5 Dynamic Routing
+        candidate_pool = {}
+        for d in (p1_preds, p2_preds, p3_preds, p4_preds):
+            candidate_pool.update(d)
+
+        # Phase 5: Unified Multi-Target Candidate & Dynamic Best Model Routing M*(Y, L)
+        p5_preds, df_m5 = run_phase_5(splits, candidate_pool, lag)
+
+        # Phase 6: Adaptive Residual Meta-Stacking with Physical Domain Enforcement
+        p6_preds, df_m6 = run_phase_6(splits, p5_preds, lag)
+
+        # Phase 7: Bounded Conformal Calibration, 1095-Day Analog Projections & Wilcoxon Test
+        p7_out = run_phase_7(df, splits, p1_preds, p6_preds, lag)
+
+        df_lag_metrics = pd.concat([df_m1, df_m2, df_m3, df_m4, df_m5, df_m6], ignore_index=True)
+        all_metrics_list.append(df_lag_metrics)
+
+        diag_df = p7_out["conformal"]["diagnostics"].copy()
+        diag_df["Lag"] = lag
+        all_conformal_list.append(diag_df)
+        all_wilcoxon_list.append(p7_out["wilcoxon"])
+
+        if save_outputs:
+            out_dir = os.path.join(config.OUTPUT_DIR, region_key)
+            os.makedirs(out_dir, exist_ok=True)
+            for t_idx, t_col in enumerate(config.TARGET_COLS):
+                plot_conformal_intervals(
+                    splits["dates_val"],
+                    splits["y_val"][:, t_idx],
+                    p6_preds["Stacked"][:, t_idx],
+                    p7_out["conformal"]["val_lower"][:, t_idx],
+                    p7_out["conformal"]["val_upper"][:, t_idx],
+                    target_col=t_col,
+                    filename=f"Conformal_Holdout_Lag{lag}_{t_col}.png",
+                    subfolder=f"{region_key}/plots",
+                )
+
+    df_all_metrics = pd.concat(all_metrics_list, ignore_index=True)
+    df_all_conformal = pd.concat(all_conformal_list, ignore_index=True)
+    df_all_wilcoxon = pd.concat(all_wilcoxon_list, ignore_index=True)
+
+    if save_outputs:
+        out_dir = os.path.join(config.OUTPUT_DIR, region_key)
+        os.makedirs(out_dir, exist_ok=True)
+        df_all_metrics.to_csv(os.path.join(out_dir, "Publication_Metrics_PhaseComparison.csv"), index=False)
+        df_all_conformal.to_csv(os.path.join(out_dir, "Conformal_Calibration_Diagnostics.csv"), index=False)
+        df_all_wilcoxon.to_csv(os.path.join(out_dir, "Wilcoxon_Significance_Summary.csv"), index=False)
+        plot_grouped_horizon_bars(df_all_metrics, metric_name="RMSE", subfolder=f"{region_key}/plots")
+        plot_grouped_horizon_bars(df_all_metrics, metric_name="MAE", subfolder=f"{region_key}/plots")
+
+    elapsed = time.time() - start_time
+    print("\n" + "=" * 80)
+    print(f"ACID-FTS Pipeline Complete in {elapsed:.2f}s.")
+    print("=" * 80)
+    return {
+        "metrics": df_all_metrics,
+        "conformal": df_all_conformal,
+        "wilcoxon": df_all_wilcoxon,
+    }
+
 
 def main():
-    print("==========================================================================")
-    print("           PACI-ICPDA WILDFIRE FORECASTING FRAMEWORK MASTER RUNNER        ")
-    print("==========================================================================")
-    
-    # 1. Load Data
-    print("[0] Loading dataset...")
-    df = load_dataset()
-    if df is None:
-        print("❌ Error loading dataset. Exiting.")
-        sys.exit(1)
-    print(f"  Dataset loaded successfully. Shape: {df.shape}")
-    
-    # Storage for compiling global cross-phase metrics
-    global_metrics_list = []
-    
-    # Dict to store final metrics for stacked bar charts
-    phase_metrics_dict = {
-        "Phase_1_Baseline": [],
-        "Phase_2_FuzzyVMD": [],
-        "Phase_3_Causal": [],
-        "Phase_4_CausalAttention": [],
-        "Phase_5_Champion": [],
-        "Phase_6_Adaptive": []
-    }
-    
-    # 2. Loop over forecast horizons (Lags)
-    for lag in config.LAGS:
-        print("\n" + "="*80)
-        print(f"   STARTING FORECAST PIPELINE FOR HORIZON: LAG = {lag} DAYS")
-        print("="*80)
-        
-        # Prepare lagged sequences
-        X, y = prepare_lagged_data(df, lag=lag, horizon=1)
-        splits = get_temporal_splits(df, X, y, lag)
-        
-        # Extract validation targets
-        y_val_true = splits["y_val"]
-        y_future_true = splits["y_future"]
-        dates_val = splits["dates_val"]
-        
-        # Phase 1: Baseline models (LR, RF, LSTM, Ensemble)
-        p1_preds, p1_met = run_phase_1(splits, lag)
-        global_metrics_list.append(p1_met)
-        
-        # Phase 2: VMD-Fuzzy Residual Learning
-        p2_preds, p2_met = run_phase_2(splits, p1_preds, lag)
-        global_metrics_list.append(p2_met)
-        
-        # Phase 3: Causal Discovery & Meta-learners
-        p3_preds, p3_met = run_phase_3(df, splits, lag)
-        global_metrics_list.append(p3_met)
-        
-        # Phase 4: Bahdanau Causal Attention LSTM Hybrid
-        p4_preds, p4_met = run_phase_4(splits, p3_preds["causal_parents"], lag)
-        global_metrics_list.append(p4_met)
-        
-        # Phase 5: Champion Selection
-        # Collect validation forecasts
-        all_val_preds = {
-            "LR": p1_preds["LR"], "RF": p1_preds["RF"], "LSTM": p1_preds["LSTM"],
-            "Ensemble": p1_preds["Ensemble"], "FuzzyVMD": p2_preds["FuzzyVMD"],
-            "Causal": p3_preds["Causal"], "CausalAttention": p4_preds["CausalAttention"]
-        }
-        all_fut_preds = {
-            "Future_LR": p1_preds["Future_Ensemble"],  # Fallbacks
-            "Future_RF": p1_preds["Future_Ensemble"],
-            "Future_LSTM": p1_preds["Future_Ensemble"],
-            "Future_Ensemble": p1_preds["Future_Ensemble"],
-            "Future_FuzzyVMD": p2_preds["Future_FuzzyVMD"],
-            "Future_Causal": p3_preds["Future_Causal"],
-            "Future_CausalAttention": p4_preds["Future_CausalAttention"]
-        }
-        p5_preds, p5_met = run_phase_5(y_val_true, y_future_true, all_val_preds, all_fut_preds, lag)
-        global_metrics_list.append(p5_met)
-        
-        # Phase 6: Adaptive Error Correction Stacking
-        p6_preds, p6_met = run_phase_6(df, splits, p5_preds, lag)
-        global_metrics_list.append(p6_met)
-        
-        # Phase 7: Conformal Calibrated Uncertainty Intervals
-        p7_intervals = run_phase_7(y_val_true, p6_preds, lag)
-        
-        # Phase 8: 1095-Day Future Projections & Fancharts
-        p8_projections = run_phase_8(splits, p6_preds, p7_intervals, lag)
-        
-        # Phase 9: Wilcoxon Signed-Rank Significance Test
-        p9_significance = run_phase_9(y_val_true, p1_preds, p6_preds, lag)
-        
-        # Parse metrics for plotting
-        phase_metrics_dict["Phase_1_Baseline"].append(p1_met[p1_met["Model"] == "Ensemble"])
-        phase_metrics_dict["Phase_2_FuzzyVMD"].append(p2_met)
-        phase_metrics_dict["Phase_3_Causal"].append(p3_met)
-        phase_metrics_dict["Phase_4_CausalAttention"].append(p4_met)
-        phase_metrics_dict["Phase_5_Champion"].append(p5_met)
-        phase_metrics_dict["Phase_6_Adaptive"].append(p6_met)
-        
-    # 3. Save Unified Global Metrics Table
-    print("\n" + "="*80)
-    print("                  COMPILING GLOBAL RESULTS SUMMARY REPORT")
-    print("="*80)
-    
-    df_global_all = pd.concat(global_metrics_list, ignore_index=True)
-    report_path = os.path.join(config.OUTPUT_DIR, "global_metrics_report.csv")
-    df_global_all.to_csv(report_path, index=False)
-    print(f"  Unified performance report saved to: {report_path}")
-    
-    # 4. Generate Stacked Bar Publication Charts
-    print("\n[Plotting] Generating IEEE Stacked Bar Error Horizon Graphs...")
-    
-    # Clean Phase DataFrames for stacked bar plotter
-    clean_phase_metrics = {}
-    for p_name, df_list in phase_metrics_dict.items():
-        clean_phase_metrics[p_name] = pd.concat(df_list, ignore_index=True)
-        
-    plot_stacked_bar_metrics(clean_phase_metrics, metric_name="MAE", filename="Stacked_MAE_Targets.png")
-    plot_stacked_bar_metrics(clean_phase_metrics, metric_name="RMSE", filename="Stacked_RMSE_Targets.png")
-    
-    print("\n==========================================================================")
-    print("      🎉 PACI-ICPDA WILDFIRE FORECASTING PIPELINE COMPLETED SUCCESSFULLY!  ")
-    print("==========================================================================")
+    parser = argparse.ArgumentParser(description="ACID-FTS 7-Phase Forest Fire Forecasting Pipeline")
+    parser.add_argument(
+        "--region",
+        type=str,
+        default=config.DEFAULT_REGION,
+        choices=list(config.REGIONS.keys()),
+        help="Target forest division (bandhavgarh, similipal, or chamba)",
+    )
+    parser.add_argument(
+        "--lags",
+        type=int,
+        nargs="+",
+        default=config.LAGS,
+        help="Forecast lead times in days (default: 1 2 7 14 30)",
+    )
+    parser.add_argument(
+        "--save-outputs",
+        action="store_true",
+        help="Persist CSV tables and PNG figures to local output/ directory (ignored by git)",
+    )
+    args = parser.parse_args()
+    run_acid_fts_pipeline(region_key=args.region, lags=args.lags, save_outputs=args.save_outputs)
+
 
 if __name__ == "__main__":
     main()
+

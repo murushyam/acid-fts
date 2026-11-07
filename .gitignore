@@ -1,8 +1,45 @@
-# Core Data & Output Exclusions
-data/
-output_demo/
+# =============================================================================
+# ACID-FTS Repository .gitignore
+# Strictly excludes all plots, results, generated tables, and binary data files
+# =============================================================================
 
-# Python caching and compiled files
+# Output, Results, and Plot Directories
+output*/
+results*/
+plots*/
+figures*/
+tables*/
+logs*/
+catboost_info/
+optuna_studies/
+
+# Image & Plot Formats
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.eps
+*.bmp
+*.tiff
+*.pdf
+
+# Result Tables & Serialized Outputs
+*.csv
+*.xlsx
+*.xls
+*.tsv
+*.tex
+*.npy
+*.npz
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.nc
+*.tif
+
+# Python Bytecode & Environments
 __pycache__/
 *.py[cod]
 *$py.class
@@ -20,33 +57,19 @@ parts/
 sdist/
 var/
 wheels/
-share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
-
-# Virtual environments
-.env
-.venv
-env/
+.venv/
 venv/
 ENV/
-env.bak/
-venv.bak/
+env/
 
-# Jupyter Notebook checkpoints
-.ipynb_checkpoints
-
-# IDE configurations
+# IDE & OS Artifacts
 .vscode/
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.swp
-
-# OS generated files
 .DS_Store
 Thumbs.db
+*~
+*.swp
+

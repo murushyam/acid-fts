@@ -1,98 +1,169 @@
 """
-PACI-ICPDA Framework - Configuration Settings
-Physics-based Adaptive Causal Informed Fuzzy Time Series prediction based on the
-Improved Cumulative Probabilistic Distribution Approach.
+ACID-FTS Framework - Central Configuration Module
+=================================================
+Adaptive Causal-Informed and Domain-Constrained Fuzzy Time Series (ACID-FTS):
+A Multi-Horizon Forecasting and Uncertainty Quantification Framework for Forest Fire Regimes.
 
-This file defines the training/validation date ranges, feature columns,
-target variables, model hyperparameters, and visualization aesthetics.
+Defines spatial study regions (Bandhavgarh, Similipal, Chamba), strict chronological
+partitions (D_train, D_cal, D_test), the 26 core multi-sensor variables (expanded
+with orthogonal aspect encodings), forecast horizons L in {1, 2, 7, 14, 30} days,
+and phase-specific hyperparameters.
 """
 
 import os
 import matplotlib.pyplot as plt
 
-# Central Workspace Directories
+# -----------------------------------------------------------------------------
+# 1. Directory & Regional Data Cube Paths
+# -----------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
-OUTPUT_DIR = os.path.join(BASE_DIR, "output_demo")
+OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 
-# Create directories if they do not exist
-os.makedirs(DATA_DIR, exist_ok=True)
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+REGIONS = {
+    "bandhavgarh": {
+        "name": "Bandhavgarh Tiger Reserve",
+        "climate": "Tropical Dry Deciduous (Central India)",
+        "bbox": (23.50, 24.00, 80.75, 81.25),
+        "h5_file": os.path.join(DATA_DIR, "Bandhavgarh_DataCube.h5"),
+    },
+    "similipal": {
+        "name": "Similipal Biosphere Reserve",
+        "climate": "Humid Sub-Tropical Moist Deciduous (Eastern India)",
+        "bbox": (21.50, 22.25, 86.00, 86.75),
+        "h5_file": os.path.join(DATA_DIR, "Similipal_DataCube.h5"),
+    },
+    "chamba": {
+        "name": "Chamba Himalayan Region",
+        "climate": "Western Himalayan Montane Coniferous",
+        "bbox": (32.25, 33.00, 75.75, 76.75),
+        "h5_file": os.path.join(DATA_DIR, "Chamba_DataCube.h5"),
+    },
+}
 
-# Datasets
-DATA_FILE = os.path.join(DATA_DIR, "sample_data.h5")
-DATA_FILE_ERA5 = os.path.join(DATA_DIR, "sample_data_era5.h5")
+DEFAULT_REGION = "bandhavgarh"
+H5_FILE_PATH = REGIONS[DEFAULT_REGION]["h5_file"]
 
-# Targets & Variable Names
-TARGET_COLS = ["fire_weather_index", "firms_fire_mask", "modis_burn_date"]
+# -----------------------------------------------------------------------------
+# 2. Strict Chronological Data Splits (Zero Temporal Leakage)
+# -----------------------------------------------------------------------------
+TRAIN_START = "2019-01-01"
+TRAIN_END = "2022-06-30"      # D_train: Base statistical, VMD-Fuzzy, causal & deep model fitting
+CAL_START = "2022-07-01"
+CAL_END = "2023-06-30"        # D_cal:   Phase 5 routing, Phase 6 stacking & Phase 7 conformal calibration
+TEST_START = "2023-07-01"
+TEST_END = "2025-06-30"       # D_test:  Strictly held-out prospective evaluation partition
+
+# Climatological Analog Projection Window (1,095 days / 3 years)
+PROJ_START = "2025-07-01"
+PROJ_END = "2028-06-29"
+
+# -----------------------------------------------------------------------------
+# 3. Multi-Target Variables & 26 Core Multi-Sensor Features
+# -----------------------------------------------------------------------------
+TARGET_COLS = [
+    "fire_weather_index",
+    "firms_fire_mask",
+    "modis_burn_date",
+]
+
 TARGET_DISPLAY_NAMES = {
     "fire_weather_index": "Fire Weather Index (FWI)",
     "firms_fire_mask": "Fire Count (pixels)",
-    "modis_burn_date": "Burnt Area (km²)"
+    "modis_burn_date": "Burnt Area (km²)",
 }
 
-# Features List (Weather drivers + historical fire lags)
-FEATURES = [
-    "fire_weather_index", "drought_code", "build_up_index", "initial_spread_index",
-    "fine_fuel_moisture_code", "duff_moisture_code", "keetch_byram_drought_index",
-    "fire_danger_index", "burning_index", "energy_release_component",
-    "firms_fire_mask", "modis_burn_date",
-    "temperature_2m_mean", "wind_speed_mean", "specific_humidity_mean", 
-    "vpd_mean", "relative_humidity_mean", "soil_moisture_mean", 
-    "total_precipitation_sum", "UINFDR", "HDWI"
+# 21 Dynamic Fire-Weather/Meteorological/Target Features + 5 Static Descriptors (with Northness/Eastness)
+DYNAMIC_FEATURES = [
+    "fire_weather_index",
+    "drought_code",
+    "build_up_index",
+    "initial_spread_index",
+    "fine_fuel_moisture_code",
+    "duff_moisture_code",
+    "keetch_byram_drought_index",
+    "fire_danger_index",
+    "burning_index",
+    "energy_release_component",
+    "firms_fire_mask",
+    "modis_burn_date",
+    "temperature_2m_mean",
+    "wind_speed_mean",
+    "specific_humidity_mean",
+    "vpd_mean",
+    "relative_humidity_mean",
+    "soil_moisture_mean",
+    "total_precipitation_sum",
+    "UINFDR",
+    "HDWI",
 ]
-STATIC_FEATURES = ["elevation", "slope", "aspect", "dist_road", "rural_population"]
 
-# Causal/Weather Drivers for Stacking Context
-CONTEXT_COLS = ["temperature_2m_mean", "total_precipitation_sum", "vpd_mean", "wind_speed_mean"]
+STATIC_FEATURES = [
+    "elevation",
+    "slope",
+    "northness",          # cos(Aspect) circular encoding (Eq. 1)
+    "eastness",           # sin(Aspect) circular encoding (Eq. 1)
+    "dist_road",
+    "rural_population",
+]
 
-# Forecast Horizons (Lag steps in days)
-LAGS = [1, 7, 14, 30]
+FEATURES = DYNAMIC_FEATURES + STATIC_FEATURES
 
-# Date Splits (Training / Validation / Future Projections)
-TRAIN_START = "2019-01-01"
-TRAIN_END = "2022-12-31"     
-VAL_START = "2023-01-01"     
-VAL_END = "2025-06-30"       
-TEST_START = "2023-01-01"    
-TEST_END = "2025-06-30"
-FUTURE_START = "2025-07-01"  
-FUTURE_END = "2028-12-31"    # For 1095-day future projection simulation
+# Physical meteorological covariates used in Phase 6 Adaptive Residual Meta-Stacking (Eq. 25)
+STACKING_WEATHER_COLS = [
+    "temperature_2m_mean",
+    "total_precipitation_sum",
+    "vpd_mean",
+]
 
-# Model Training Parameters
-N_RUNS = 1                  # Stability loop iterations
-OPTUNA_TRIALS = 3           # Low count for demo/testing, scale up for production
-LSTM_EPOCHS = 10
+# -----------------------------------------------------------------------------
+# 4. Multi-Horizon Forecast Lags & Model Hyperparameters
+# -----------------------------------------------------------------------------
+LAGS = [1, 2, 7, 14, 30]
+LOOKBACK_WINDOW = 30
+
+# Phase 1: Baseline & Ensemble Hyperparameters
+LSTM_EPOCHS = 15
 BATCH_SIZE = 32
-CONFORMAL_ALPHA = 0.05      # 95% prediction interval coverage probability (PICP)
+OPTUNA_TRIALS = 10
 
-# PCMCI Causal Discovery Settings
-PCMCI_ALPHA = 0.05
-PCMCI_TAU_MAX = 7
+# Phase 2: VMD-Fuzzy Residual Learning (ICPDA) Hyperparameters
+VMD_K_MODES = 5            # Number of Intrinsic Mode Functions (IMFs)
+VMD_ALPHA = 2000.0         # Quadratic penalty bandwidth constraint
+VMD_TAU = 0.0              # Dual ascent noise-tolerance step
+VMD_TOL = 1e-6             # ADMM convergence tolerance
+FUZZY_N_SETS = 5           # Number of triangular fuzzy linguistic sets {VL, L, M, H, VH}
 
-# =======================================================
-# IEEE TRANSACTION PLOT STYLING STYLE
-# =======================================================
-PLOT_PARAMS = {
-    "font.family": "serif",
-    "font.serif": ["Times New Roman", "DejaVu Serif"],
-    "font.size": 11,
-    "axes.labelsize": 13,
-    "axes.titlesize": 14,
-    "xtick.labelsize": 11,
-    "ytick.labelsize": 11,
-    "legend.fontsize": 11,
-    "figure.figsize": (9, 5.5),
-    "figure.dpi": 300,
-    "axes.grid": True,
-    "grid.alpha": 0.25,
-    "lines.linewidth": 1.5
-}
+# Phase 3: Regime-Switching Causal Meta-Learner Hyperparameters
+FWI_REGIME_QUANTILE = 0.90  # 90th percentile threshold for extreme fire-weather regime T_t
+PCMCI_ALPHA = 0.05          # Significance threshold for conditional independence tests
+PCMCI_TAU_MAX = 7           # Maximum causal time lag (days)
+
+# Phase 4: Deep Causal Attention Hybrid Hyperparameters
+ATTENTION_HIDDEN_DIM = 32   # LSTM encoder hidden state dimension d_h
+ATTENTION_UNITS = 16        # Bahdanau additive alignment dimension d_a
+
+# Phase 7: Bounded Conformal Prediction & Loss Hyperparameters
+CONFORMAL_ALPHA = 0.05      # Significance level alpha = 0.05 (95% nominal coverage)
+LINEX_ASYMMETRY_B = 1.0     # Scale-normalized LinEx under-prediction penalty parameter b > 0
+RANDOM_SEED = 42
+
 
 def apply_plot_style():
-    """Apply standard IEEE publication-grade style to matplotlib."""
-    for key, value in PLOT_PARAMS.items():
-        try:
-            plt.rcParams[key] = value
-        except Exception:
-            pass
+    """Applies IEEE publication-grade Matplotlib styling."""
+    plt.rcParams.update({
+        "font.family": "serif",
+        "font.serif": ["Times New Roman", "DejaVu Serif"],
+        "font.size": 10,
+        "axes.titlesize": 11,
+        "axes.labelsize": 10,
+        "xtick.labelsize": 9,
+        "ytick.labelsize": 9,
+        "legend.fontsize": 8.5,
+        "figure.titlesize": 12,
+        "axes.grid": True,
+        "grid.alpha": 0.25,
+        "grid.linestyle": "--",
+        "savefig.dpi": 300,
+        "savefig.bbox": "tight",
+    })
