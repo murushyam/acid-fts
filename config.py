@@ -11,7 +11,6 @@ and phase-specific hyperparameters.
 """
 
 import os
-import matplotlib.pyplot as plt
 
 # -----------------------------------------------------------------------------
 # 1. Directory & Regional Data Cube Paths
@@ -26,18 +25,21 @@ REGIONS = {
         "climate": "Tropical Dry Deciduous (Central India)",
         "bbox": (23.50, 24.00, 80.75, 81.25),
         "h5_file": os.path.join(DATA_DIR, "Bandhavgarh_DataCube.h5"),
+        "test_end": "2024-07-31",
     },
     "similipal": {
         "name": "Similipal Biosphere Reserve",
         "climate": "Humid Sub-Tropical Moist Deciduous (Eastern India)",
         "bbox": (21.50, 22.25, 86.00, 86.75),
         "h5_file": os.path.join(DATA_DIR, "Similipal_DataCube.h5"),
+        "test_end": "2024-07-31",
     },
     "chamba": {
         "name": "Chamba Himalayan Region",
         "climate": "Western Himalayan Montane Coniferous",
         "bbox": (32.25, 33.00, 75.75, 76.75),
         "h5_file": os.path.join(DATA_DIR, "Chamba_DataCube.h5"),
+        "test_end": "2025-08-01",
     },
 }
 
@@ -52,7 +54,21 @@ TRAIN_END = "2022-06-30"      # D_train: Base statistical, VMD-Fuzzy, causal & d
 CAL_START = "2022-07-01"
 CAL_END = "2023-06-30"        # D_cal:   Phase 5 routing, Phase 6 stacking & Phase 7 conformal calibration
 TEST_START = "2023-07-01"
-TEST_END = "2025-06-30"       # D_test:  Strictly held-out prospective evaluation partition
+TEST_END = "2025-06-30"       # D_test:  Default/fallback held-out prospective evaluation partition
+
+# Regional held-out prospective test end dates (matching Table I and Section II.A)
+REGIONAL_TEST_ENDS = {
+    "bandhavgarh": "2024-07-31",   # 13 months (2023-07-01 to 2024-07-31)
+    "similipal": "2024-07-31",     # 13 months (2023-07-01 to 2024-07-31)
+    "chamba": "2025-08-01",        # 25 months (2023-07-01 to 2025-08-01)
+}
+
+
+def get_test_end(region=None):
+    """Returns the regional test partition end date, defaulting to TEST_END."""
+    if region and str(region).lower() in REGIONAL_TEST_ENDS:
+        return REGIONAL_TEST_ENDS[str(region).lower()]
+    return TEST_END
 
 # Climatological Analog Projection Window (1,095 days / 3 years)
 PROJ_START = "2025-07-01"
@@ -73,7 +89,7 @@ TARGET_DISPLAY_NAMES = {
     "modis_burn_date": "Burnt Area (km²)",
 }
 
-# 21 Dynamic Fire-Weather/Meteorological/Target Features + 5 Static Descriptors (with Northness/Eastness)
+# 21 Dynamic Fire-Weather/Meteorological/Target Features + 6 Static Descriptors (including Northness & Eastness) totaling 27 features
 DYNAMIC_FEATURES = [
     "fire_weather_index",
     "drought_code",
@@ -151,6 +167,10 @@ RANDOM_SEED = 42
 
 def apply_plot_style():
     """Applies IEEE publication-grade Matplotlib styling."""
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        return
     plt.rcParams.update({
         "font.family": "serif",
         "font.serif": ["Times New Roman", "DejaVu Serif"],

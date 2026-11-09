@@ -53,6 +53,38 @@ def compute_conformal_metrics(y_true, y_lower, y_upper, alpha=config.CONFORMAL_A
     }
 
 
+def compute_event_detection_metrics(y_true, y_pred, threshold=1.0):
+    """
+    Computes operational Earth-observation binary event-detection contingency metrics
+    (Precision, Recall / Probability of Detection [POD], False Alarm Ratio [FAR],
+    F1-Score, and Critical Success Index [CSI / Threat Score]) at threshold >= 1.0.
+    """
+    y_true = np.asarray(y_true, dtype=np.float64).ravel()
+    y_pred = np.asarray(y_pred, dtype=np.float64).ravel()
+
+    obs_event = y_true >= threshold
+    pred_event = y_pred >= threshold
+
+    hits = float(np.sum(obs_event & pred_event))
+    misses = float(np.sum(obs_event & (~pred_event)))
+    false_alarms = float(np.sum((~obs_event) & pred_event))
+
+    pod = hits / max(hits + misses, 1e-6)
+    precision = hits / max(hits + false_alarms, 1e-6)
+    far = false_alarms / max(hits + false_alarms, 1e-6)
+    f1 = (2.0 * precision * pod) / max(precision + pod, 1e-6)
+    csi = hits / max(hits + misses + false_alarms, 1e-6)
+
+    return {
+        "Precision": float(precision),
+        "POD": float(pod),
+        "Recall": float(pod),
+        "FAR": float(far),
+        "F1": float(f1),
+        "CSI": float(csi),
+    }
+
+
 def calculate_metrics(y_true, y_pred):
     """
     Computes target-specific and aggregate MAE, RMSE, and normalized LinEx asymmetric loss.

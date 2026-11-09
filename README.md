@@ -51,9 +51,11 @@ acid-fts/
 │   ├── phase5_dynamic_routing.py          # Phase 5: Joint multi-target candidate & dynamic routing M*(Y,L)
 │   ├── phase6_adaptive_stacking.py        # Phase 6: Forecast-origin lagged residual XGBoost meta-stacking
 │   └── phase7_conformal_calibration.py    # Phase 7: KS diagnostics, bounded conformal intervals, 1095d analogs
+├── tests/
+│   └── test_pipeline.py                   # 17 unit tests verifying mathematical fidelity & zero temporal leakage
 └── utils/
     ├── __init__.py
-    ├── metrics.py                         # RMSE, MAE, normalized LinEx loss, PICP, PINAW, ACE
+    ├── metrics.py                         # RMSE, MAE, LinEx loss, PICP, PINAW, ACE, and POD/FAR/F1/CSI metrics
     └── plotting.py                        # Grouped horizon bar charts & conformal fan chart utilities
 ```
 
@@ -80,6 +82,9 @@ python run_pipeline.py --region bandhavgarh --lags 1 2 7 14 30
 # Run for Similipal Biosphere Reserve or Chamba Himalayan Forest Division
 python run_pipeline.py --region similipal --lags 1 2 7 14 30
 python run_pipeline.py --region chamba --lags 1 2 7 14 30
+
+# Run the automated unit test suite
+python tests/test_pipeline.py
 ```
 
 > **Note on Data Cubes**: If the regional HDF5 data cubes (`data/*_DataCube_2004_2026.h5`) are not present locally, `data_loader.py` automatically invokes `generate_sample_data.py` to synthesize a physically consistent 26-feature daily spatiotemporal dataset so the full 7-phase pipeline can be verified out-of-the-box.
@@ -94,7 +99,7 @@ To guarantee zero temporal leakage across all seven phases, the multi-year histo
 | :--- | :--- | :--- |
 | **Training ($\mathcal{D}_{\text{train}}$)** | `2019-01-01` – `2022-06-30` | Z-score standardization, VMD–Fuzzy centers, causal parent discovery, propensity scores, base & deep model training |
 | **Calibration ($\mathcal{D}_{\text{cal}}$)** | `2022-07-01` – `2023-06-30` | Optuna hyperparameter tuning, Phase 5 dynamic routing $M^*(Y,L)$, Phase 6 meta-learner training, Phase 7 conformal quantile $\hat{q}_\alpha$ |
-| **Holdout Test ($\mathcal{D}_{\text{test}}$)** | `2023-07-01` – `2025-06-30` | Strictly out-of-sample deterministic (RMSE, MAE, $\mathcal{L}_{\text{asym}}$) and probabilistic (PICP, PINAW, ACE, Wilcoxon) evaluation |
+| **Holdout Test ($\mathcal{D}_{\text{test}}$)** | `2023-07-01` – `2024-07-31` (Bandhavgarh, Similipal); `2023-07-01` – `2025-08-01` (Chamba) | Strictly out-of-sample deterministic (RMSE, MAE, $\mathcal{L}_{\text{asym}}$, POD, FAR, CSI) and probabilistic (PICP, PINAW, ACE, Wilcoxon) evaluation |
 
 ---
 

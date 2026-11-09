@@ -52,7 +52,7 @@ def load_datacube(region_key=config.DEFAULT_REGION, h5_path=None):
     return df
 
 
-def create_multi_horizon_splits(df, lag, lookback=None):
+def create_multi_horizon_splits(df, lag, lookback=None, region=None):
     """
     Constructs strictly partitioned chronological tensors (D_train, D_cal, D_test, D_proj)
     for forecast lead time L = `lag` days using a lookback window W.
@@ -62,6 +62,8 @@ def create_multi_horizon_splits(df, lag, lookback=None):
     """
     if lookback is None:
         lookback = max(lag, 7)
+
+    test_end = config.get_test_end(region)
 
     # Fit StandardScaler strictly on D_train predictors
     train_df = df.loc[config.TRAIN_START:config.TRAIN_END]
@@ -90,7 +92,7 @@ def create_multi_horizon_splits(df, lag, lookback=None):
     # Strict chronological partition masks based on target forecast date
     train_mask = (target_dates >= config.TRAIN_START) & (target_dates <= config.TRAIN_END)
     cal_mask = (target_dates >= config.CAL_START) & (target_dates <= config.CAL_END)
-    test_mask = (target_dates >= config.TEST_START) & (target_dates <= config.TEST_END)
+    test_mask = (target_dates >= config.TEST_START) & (target_dates <= test_end)
     proj_mask = (target_dates >= config.PROJ_START) & (target_dates <= config.PROJ_END)
 
     # Combine D_cal and D_test when reporting validation/holdout evaluation or expose both
