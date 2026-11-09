@@ -1,34 +1,82 @@
 # ACID-FTS: Adaptive Causal-Informed and Domain-Constrained Fuzzy Time Series
 
-Official Python implementation of **"ACID-FTS: A Multi-Horizon Forecasting and Uncertainty Quantification Framework for Forest Fire Regimes"**.
+Official Python implementation of **"Adaptive Causal-Informed and Domain-Constrained Fuzzy Time Series Forecasting for Multi-Horizon Forest Fire Danger and Extremes (ACID-FTS)"**.
 
 ---
 
 ## Overview
 
-Wildfire activity across tropical monsoon and montane forest ecosystems arises from non-stationary, zero-inflated interactions among atmospheric aridity, canopy fuel moisture, and terrain complexity across sub-seasonal lead times. **ACID-FTS** (*Adaptive Causal-Informed and Domain-Constrained Fuzzy Time Series*) is a seven-phase forecasting and uncertainty quantification architecture that integrates spectral-fuzzy decomposition, regime-switching causal inference, deep temporal attention, dynamic multi-horizon model routing, adaptive residual meta-stacking, and physically bounded split-conformal calibration.
+Wildfire activity across tropical deciduous and montane forest ecosystems is governed by non-stationary, zero-inflated interactions among atmospheric aridity, fuel moisture desiccation, and terrain complexity across multi-week lead times. **ACID-FTS** is a seven-phase forecasting and uncertainty quantification framework that integrates variational mode decomposition, fuzzy interval residual learning, regime-switching causal meta-learners, deep temporal attention, dynamic model routing, forecast-origin residual meta-stacking, and physically bounded split-conformal calibration.
 
-### Key Architectural Phases
+---
 
-1. **Phase 1 — Multi-Paradigm Baseline & Ensemble Modeling (`models/phase1_baseline.py`)**:
-   - Statistical persistence and autoregressive baselines: Naive, Seasonal Naive ($P=365$), Moving Average ($k=7$), and $\text{ARIMA}(5,1,0)$.
-   - Machine learning & deep sequence architectures: Ridge-regularized Linear Regression, Optuna-tuned Random Forest, Multi-layer LSTM, Temporal Fusion Transformer (TFT), and a 4-model equal-weight ensemble.
-2. **Phase 2 — VMD–Fuzzy Residual Learning / ICPDA (`models/phase2_vmd_fuzzy.py`)**:
-   - Decomposes base training residuals $r_t = y_t - \hat{y}_{\text{base},t}$ into $K=5$ orthogonal Intrinsic Mode Functions (IMFs) via Variational Mode Decomposition (ADMM spectral optimization).
-   - Fuzzifies each mode $u_k(t)$ into $n=5$ overlapping triangular linguistic sets $\{\text{VL, L, M, H, VH}\}$ parameterized by empirical quantile centers $c_1 < \dots < c_5$ and trains mode-specific Fuzzy Random Forest regressors.
-3. **Phase 3 — Regime-Switching Causal Meta-Learners (`models/phase3_causal_metalearners.py`)**:
-   - Identifies time-lagged causal parent drivers and defines an extreme fire-weather regime treatment indicator $T_t = \mathbf{1}[\text{FWI}_t > Q_{90}(\text{FWI})]$.
-   - Implements both a single-surface Causal S-Learner $\hat{\mu}_S(\mathbf{x}_t, T_t)$ and a propensity-weighted Causal T-Learner $\hat{y}_{\text{T-Learner}} = e(\mathbf{x}_t)\hat{\mu}_1(\mathbf{x}_t) + (1 - e(\mathbf{x}_t))\hat{\mu}_0(\mathbf{x}_t)$ weighted by regularized logistic propensity scores $e(\mathbf{x}_t) = P(T_t = 1 \mid \mathbf{x}_t)$.
-4. **Phase 4 — Deep Causal Attention Hybrid (`models/phase4_causal_attention.py`)**:
-   - Encodes causal parent lookback windows via an LSTM encoder into hidden states $\{\mathbf{h}_1, \dots, \mathbf{h}_W\}$ and computes Bahdanau additive alignment weights conditioned on the terminal query state $\mathbf{h}_W$:
-     $$s_i = \mathbf{v}_a^\top \tanh(\mathbf{W}_a \mathbf{h}_i + \mathbf{U}_a \mathbf{h}_W), \quad \mathbf{c}_t = \sum_{i=1}^W \alpha_i \mathbf{h}_i$$
-   - Refines the concatenated representation $[\mathbf{c}_t; \mathbf{h}_W; \mathbf{x}_t]$ via gradient-boosted regression trees (XGBoost) evaluated under a scale-normalized LinEx asymmetric loss $\mathcal{L}_{\text{asym}}$.
-5. **Phase 5 — Unified Multi-Target Candidate & Dynamic Best Model Routing (`models/phase5_dynamic_routing.py`)**:
-   - Evaluates all candidate architectures strictly on the calibration split $\mathcal{D}_{\text{cal}}$ and dynamically routes each target-horizon pair $(Y, L)$ via $M^*(Y, L) = \arg\min_{M \in \mathcal{M}} \text{RMSE}_{\text{cal}}(M, Y, L)$.
-6. **Phase 6 — Adaptive Residual Meta-Stacking (`models/phase6_adaptive_stacking.py`)**:
-   - Conditions an Optuna-tuned XGBoost residual meta-regressor $g_\phi(\mathbf{z}_t)$ on strictly forecast-origin observable lagged errors $[e_t, e_{t-1}]$ (where $e_t = y_t - \hat{y}_{t \mid t-L}^{(M^*)}$) and contemporaneous physical weather covariates $[T_t, P_t, \text{VPD}_t]$, followed by non-negativity projection $\max(0, \cdot)$ and integer rounding for discrete Fire Count.
-7. **Phase 7 — Bounded Conformal Prediction & 1,095-Day Analog Projections (`models/phase7_conformal_calibration.py`)**:
-   - Performs Kolmogorov–Smirnov ($D_{\text{KS}}$) residual distribution diagnostics across Gaussian KDE, Skew-Normal, and Normal fits, computes finite-sample split-conformal quantiles $\hat{q}_\alpha$ on $\mathcal{D}_{\text{cal}}$, constructs non-negative prediction intervals $\mathcal{C}_{t+L}^{(\alpha)} = [\max(0, \hat{y}_{t+L} - \hat{q}_\alpha), \hat{y}_{t+L} + \hat{q}_\alpha]$, evaluates Prediction Interval Coverage Probability ($\text{PICP}$), Prediction Interval Normalized Average Width ($\text{PINAW}$), and Average Coverage Error ($\text{ACE} = \text{PICP} - (1 - \alpha)$), generates 1,095-day climatological analog projections with monthly-to-daily phenological disaggregation, and conducts paired Wilcoxon signed-rank tests.
+## Seven-Phase Pipeline Architecture
+
+| Phase | Module | Methodological Role |
+| :--- | :--- | :--- |
+| **Phase 1** | `models/phase1_baseline.py` | **Baseline Ensemble Prediction**: Evaluates statistical baselines (Naive, Seasonal Naive, Moving Average, ARIMA) alongside Ridge Regression, Optuna-tuned Random Forest, Multi-layer LSTM, and Temporal Fusion Transformer (TFT), combining the top four multivariate learners into an equal-weight ensemble. |
+| **Phase 2** | `models/phase2_vmd_fuzzy.py` | **VMD–Fuzzy Residual Learning (ICPDA)**: Decomposes Phase 1 training residuals into `K = 5` band-limited Intrinsic Mode Functions (IMFs) via Variational Mode Decomposition (VMD), fuzzifies each mode across `n = 5` triangular quantile intervals, and trains mode-specific Fuzzy Random Forest regressors. |
+| **Phase 3** | `models/phase3_causal_metalearners.py` | **Regime-Switching Causal Meta-Learners**: Defines binary extreme fire-weather treatments at the 90th training percentile of the Canadian Fire Weather Index (`FWI`), estimates logistic propensity scores, and trains decoupled Causal S-Learner and propensity-weighted Causal T-Learner estimators. |
+| **Phase 4** | `models/phase4_causal_attention.py` | **Deep Causal Attention Hybrid**: Encodes 30-day lookback sequences (`W = 30`) through a causal LSTM with Bahdanau additive attention and refines the concatenated context vector and terminal state via an XGBoost regressor. |
+| **Phase 5** | `models/phase5_dynamic_routing.py` | **Candidate Assembly & Dynamic Routing**: Benchmarks a joint multi-target hybrid network against single-target candidates and routes each target variable and lead horizon (`L` in `{1, 2, 7, 14, 30}` days) to its optimal architecture on the held-out calibration partition. |
+| **Phase 6** | `models/phase6_adaptive_stacking.py` | **Adaptive Residual Meta-Stacking**: Trains a secondary XGBoost error corrector conditioned strictly on forecast-origin realized residuals and contemporaneous weather covariates (`Temperature`, `Precipitation`, `VPD`), enforcing non-negativity and discrete integer rounding for fire counts. |
+| **Phase 7** | `models/phase7_conformal_calibration.py` | **Bounded Conformal Calibration & Projections**: Fits residual distributions (KDE, Skew-Normal, Gaussian) via Kolmogorov–Smirnov testing, constructs non-negative split-conformal prediction intervals (`60%`, `80%`, `90%`, `95%` CI), generates 1,095-day CMIP6 analog projections, and runs paired Wilcoxon signed-rank tests. |
+
+---
+
+## Core Mathematical Formulations
+
+### 1. Circular Topographic Aspect Decomposition
+
+To prevent discontinuity artifacts at `0° / 360°` during spatial aggregation, terrain aspect (in degrees) is decomposed into orthogonal directional components:
+
+$$
+\text{Northness} = \cos\left(\frac{\theta \pi}{180}\right), \qquad \text{Eastness} = \sin\left(\frac{\theta \pi}{180}\right)
+$$
+
+### 2. Scale-Normalized Asymmetric LinEx Loss
+
+To penalize missed wildfire outbreaks exponentially while penalizing false alarms linearly across heterogeneous target scales, prediction errors are normalized by the training target standard deviation and clipped to `[-10, 10]`:
+
+$$
+\mathcal{L}_{\text{asym}}(y_i, \hat{y}_i; b) = \frac{2}{b^2} \left( \exp(b u_i) - b u_i - 1 \right), \qquad u_i = \text{clip}\left(\frac{y_i - \hat{y}_i}{\sigma_Y}, \; -10, \; 10\right)
+$$
+
+### 3. Propensity-Weighted Causal T-Learner
+
+Extreme fire-weather regimes are defined at the 90th training percentile of the Canadian Fire Weather Index (`FWI`), and logistic propensity scores weight the regime-specific response surfaces via the law of total expectation:
+
+$$
+T_t = \mathbf{1}\left[\text{FWI}_t > Q_{90}(\text{FWI})\right], \qquad e(\mathbf{x}_t) = P(T_t = 1 \mid \mathbf{x}_t)
+$$
+
+$$
+\hat{y}_{t+L}^{\text{T}} = e(\mathbf{x}_t) \, f_1(\tilde{\mathbf{x}}_t) + \left(1 - e(\mathbf{x}_t)\right) f_0(\tilde{\mathbf{x}}_t)
+$$
+
+### 4. Strictly Causal Residual Meta-Stacking & Domain Projection
+
+At forecast origin `t` for lead horizon `L`, secondary residual correction conditions strictly on realized forecast-origin errors observable at time `t`, followed by non-negative domain projection (and nearest-integer rounding for discrete active fire pixel counts):
+
+$$
+e_{t \mid t-L} = y_t - \hat{y}_{t \mid t-L}^*
+$$
+
+$$
+\hat{e}_{t+L \mid t} = f_{\text{XGB}}\left(\left[\hat{y}_{t+L \mid t}^*, \; e_{t \mid t-L}, \; e_{t-1 \mid t-L-1}, \; T_t, \; P_t, \; \text{VPD}_t\right]\right)
+$$
+
+$$
+\hat{y}_{t+L}^{\text{P6}} = \max\left(0, \; \hat{y}_{t+L \mid t}^* + \hat{e}_{t+L \mid t}\right)
+$$
+
+### 5. Bounded Split-Conformal Prediction Intervals
+
+Using absolute residual non-conformity scores on the held-out calibration partition, finite-sample conformal quantiles at miscoverage rate `α` are projected onto the non-negative physical support `[0, ∞)`:
+
+$$
+S_i = \left| y_i - \hat{y}_i^{\text{P6}} \right|, \qquad \mathcal{C}_{t+L}^{(\alpha)} = \left[ \max\left(0, \; \hat{y}_{t+L}^{\text{P6}} - \hat{q}_\alpha\right), \; \hat{y}_{t+L}^{\text{P6}} + \hat{q}_\alpha \right]
+$$
 
 ---
 
@@ -36,9 +84,9 @@ Wildfire activity across tropical monsoon and montane forest ecosystems arises f
 
 ```text
 acid-fts/
-├── config.py                              # Study regions, chronological splits, 26 features, and hyperparameters
+├── config.py                              # Study regions, chronological splits, 27 features, and hyperparameters
 ├── data_loader.py                         # Aspect encoding, zero-leakage standardization, sliding-window tensors
-├── generate_sample_data.py                # Synthetic 26-feature HDF5 data cube generator for reproducible testing
+├── generate_sample_data.py                # Synthetic 27-feature HDF5 data cube generator for reproducible testing
 ├── run_pipeline.py                        # Master CLI orchestrator for Phases 1-7
 ├── requirements.txt                       # Python package dependencies
 ├── LICENSE                                # MIT License
@@ -48,7 +96,7 @@ acid-fts/
 │   ├── phase2_vmd_fuzzy.py                # Phase 2: VMD ADMM decomposition + 5-set triangular Fuzzy RF (ICPDA)
 │   ├── phase3_causal_metalearners.py      # Phase 3: FWI regime switching, propensity scores, S- & T-Learners
 │   ├── phase4_causal_attention.py         # Phase 4: Bahdanau query attention LSTM + XGBoost hybrid
-│   ├── phase5_dynamic_routing.py          # Phase 5: Joint multi-target candidate & dynamic routing M*(Y,L)
+│   ├── phase5_dynamic_routing.py          # Phase 5: Joint multi-target candidate & dynamic routing
 │   ├── phase6_adaptive_stacking.py        # Phase 6: Forecast-origin lagged residual XGBoost meta-stacking
 │   └── phase7_conformal_calibration.py    # Phase 7: KS diagnostics, bounded conformal intervals, 1095d analogs
 ├── tests/
@@ -61,17 +109,13 @@ acid-fts/
 
 ---
 
-## Installation
+## Installation & Usage
 
 ```bash
 git clone https://github.com/murushyam/acid-fts.git
 cd acid-fts
 pip install -r requirements.txt
 ```
-
----
-
-## Usage
 
 ### Run the Full 7-Phase Pipeline
 
@@ -83,23 +127,23 @@ python run_pipeline.py --region bandhavgarh --lags 1 2 7 14 30
 python run_pipeline.py --region similipal --lags 1 2 7 14 30
 python run_pipeline.py --region chamba --lags 1 2 7 14 30
 
-# Run the automated unit test suite
+# Run the automated unit test suite (17 unit tests)
 python tests/test_pipeline.py
 ```
 
-> **Note on Data Cubes**: If the regional HDF5 data cubes (`data/*_DataCube_2004_2026.h5`) are not present locally, `data_loader.py` automatically invokes `generate_sample_data.py` to synthesize a physically consistent 26-feature daily spatiotemporal dataset so the full 7-phase pipeline can be verified out-of-the-box.
+> **Note on Data Cubes**: If regional HDF5 data cubes (`data/*_DataCube_2004_2026.h5`) are not present locally, `data_loader.py` automatically invokes `generate_sample_data.py` to synthesize a physically consistent 27-feature daily spatiotemporal dataset so the full 7-phase pipeline can be verified out-of-the-box.
 
 ---
 
 ## Chronological Partitioning Protocol
 
-To guarantee zero temporal leakage across all seven phases, the multi-year historical record across the three Indian forest reserves (Bandhavgarh Tiger Reserve, Similipal Biosphere Reserve, and Chamba Himalayan region) is partitioned into three strictly disjoint chronological blocks:
+To guarantee zero temporal leakage across all seven phases, the historical record across the three Indian forest reserves (Bandhavgarh Tiger Reserve, Similipal Biosphere Reserve, and Chamba Western Himalaya) is partitioned into three strictly disjoint chronological splits:
 
 | Partition | Date Range | Role in ACID-FTS |
 | :--- | :--- | :--- |
-| **Training ($\mathcal{D}_{\text{train}}$)** | `2019-01-01` – `2022-06-30` | Z-score standardization, VMD–Fuzzy centers, causal parent discovery, propensity scores, base & deep model training |
-| **Calibration ($\mathcal{D}_{\text{cal}}$)** | `2022-07-01` – `2023-06-30` | Optuna hyperparameter tuning, Phase 5 dynamic routing $M^*(Y,L)$, Phase 6 meta-learner training, Phase 7 conformal quantile $\hat{q}_\alpha$ |
-| **Holdout Test ($\mathcal{D}_{\text{test}}$)** | `2023-07-01` – `2024-07-31` (Bandhavgarh, Similipal); `2023-07-01` – `2025-08-01` (Chamba) | Strictly out-of-sample deterministic (RMSE, MAE, $\mathcal{L}_{\text{asym}}$, POD, FAR, CSI) and probabilistic (PICP, PINAW, ACE, Wilcoxon) evaluation |
+| **Training (`D_train`)** | `2019-01-01` to `2022-06-30` | Z-score standardization, VMD–Fuzzy interval centroids, causal parent discovery, propensity scores, and base model fitting (Phases 1–4) |
+| **Calibration (`D_cal`)** | `2022-07-01` to `2023-06-30` | Out-of-sample Phase 5 model routing, Phase 6 residual meta-stacking training, and Phase 7 conformal quantile calibration |
+| **Holdout Test (`D_test`)** | `2023-07-01` to `2024-07-31` (Bandhavgarh, Similipal)<br>`2023-07-01` to `2025-08-01` (Chamba) | Prospective out-of-sample deterministic (`RMSE`, `MAE`, `LinEx`, `POD`, `FAR`, `CSI`) and probabilistic (`PICP`, `PINAW`, `ACE`, `Wilcoxon`) evaluation |
 
 ---
 
