@@ -5,6 +5,7 @@ Cleaned, unit-verified, analysis-ready daily spatiotemporal datasets supporting 
 > **Adaptive Causal-Informed and Domain-Constrained Fuzzy Time Series Forecasting for Multi-Horizon Forest Fire Danger and Extremes (ACID-FTS)**  
 > **Authors**: M. S. Shyam Sunder, Sibarama Panigrahi, and Bhishma Tyagi  
 > **Affiliation**: National Institute of Technology Rourkela, Odisha, India  
+> **Zenodo DOI**: [https://doi.org/10.5281/zenodo.24341460](https://doi.org/10.5281/zenodo.24341460)  
 > **Source Code Repository**: [https://github.com/murushyam/acid-fts](https://github.com/murushyam/acid-fts)
 
 ---

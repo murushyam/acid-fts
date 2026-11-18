@@ -1,5 +1,7 @@
 # ACID-FTS: Adaptive Causal-Informed and Domain-Constrained Fuzzy Time Series
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24341460.svg)](https://doi.org/10.5281/zenodo.24341460)
+
 Official Python implementation of **"Adaptive Causal-Informed and Domain-Constrained Fuzzy Time Series Forecasting for Multi-Horizon Forest Fire Danger and Extremes (ACID-FTS)"**.
 
 ---
@@ -140,7 +142,7 @@ python run_pipeline.py --region chamba --lags 1 2 7 14 30
 python tests/test_pipeline.py
 ```
 
-> **Note on Benchmark Datasets**: The cleaned, unit-verified 27-feature daily regional datasets (`data/*_DataCube.h5` and `data/*_Cleaned_Daily.csv`) for Bandhavgarh, Similipal, and Chamba are included directly in [`data/`](data/) for out-of-the-box reproducibility and archived on Zenodo.
+> **Note on Benchmark Datasets**: The cleaned, unit-verified 27-feature daily regional datasets (`data/*_DataCube.h5` and `data/*_Cleaned_Daily.csv`) for Bandhavgarh, Similipal, and Chamba are included directly in [`data/`](data/) for out-of-the-box reproducibility and permanently archived on Zenodo at **[https://doi.org/10.5281/zenodo.24341460](https://doi.org/10.5281/zenodo.24341460)**.
 
 ---
 
