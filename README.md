@@ -86,10 +86,19 @@ $$
 acid-fts/
 ├── config.py                              # Study regions, chronological splits, 27 features, and hyperparameters
 ├── data_loader.py                         # Aspect encoding, zero-leakage standardization, sliding-window tensors
-├── generate_sample_data.py                # Synthetic 27-feature HDF5 data cube generator for reproducible testing
+├── generate_sample_data.py                # Synthetic 27-feature HDF5 data cube generator for fallback testing
 ├── run_pipeline.py                        # Master CLI orchestrator for Phases 1-7
 ├── requirements.txt                       # Python package dependencies
 ├── LICENSE                                # MIT License
+├── data/                                  # Cleaned, unit-verified regional benchmark datasets (HDF5 + CSV)
+│   ├── Bandhavgarh_DataCube.h5            # Bandhavgarh Tiger Reserve 27-feature HDF5 data cube
+│   ├── Bandhavgarh_Cleaned_Daily.csv      # Bandhavgarh daily time-series table with partition labels
+│   ├── Similipal_DataCube.h5              # Similipal Biosphere Reserve 27-feature HDF5 data cube
+│   ├── Similipal_Cleaned_Daily.csv        # Similipal daily time-series table with partition labels
+│   ├── Chamba_DataCube.h5                 # Chamba Himalayan Division 27-feature HDF5 data cube
+│   ├── Chamba_Cleaned_Daily.csv           # Chamba daily time-series table with partition labels
+│   ├── Data_Dictionary_and_Metadata.csv   # Variable definitions, physical units, and sensor provenance
+│   └── Unit_Verification_Summary.csv      # Empirical range, mean, std, and zero-inflation statistics
 ├── models/
 │   ├── __init__.py
 │   ├── phase1_baseline.py                 # Phase 1: Statistical, ML, DL (LSTM/TFT) & 4-Model Ensemble
@@ -131,7 +140,7 @@ python run_pipeline.py --region chamba --lags 1 2 7 14 30
 python tests/test_pipeline.py
 ```
 
-> **Note on Data Cubes**: If regional HDF5 data cubes (`data/*_DataCube_2004_2026.h5`) are not present locally, `data_loader.py` automatically invokes `generate_sample_data.py` to synthesize a physically consistent 27-feature daily spatiotemporal dataset so the full 7-phase pipeline can be verified out-of-the-box.
+> **Note on Benchmark Datasets**: The cleaned, unit-verified 27-feature daily regional datasets (`data/*_DataCube.h5` and `data/*_Cleaned_Daily.csv`) for Bandhavgarh, Similipal, and Chamba are included directly in [`data/`](data/) for out-of-the-box reproducibility and archived on Zenodo.
 
 ---
 

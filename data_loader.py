@@ -10,7 +10,16 @@ import os
 import h5py
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+try:
+    from sklearn.preprocessing import StandardScaler
+except ImportError:
+    class StandardScaler:
+        def fit(self, X):
+            self.mean_ = np.mean(X, axis=0)
+            self.scale_ = np.where(np.std(X, axis=0) > 0, np.std(X, axis=0), 1.0)
+            return self
+        def transform(self, X):
+            return (X - self.mean_) / self.scale_
 import config
 from generate_sample_data import generate_regional_datacube
 

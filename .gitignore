@@ -39,6 +39,12 @@ optuna_studies/
 *.nc
 *.tif
 
+# Explicitly track the cleaned regional benchmark datasets in data/
+!data/
+!data/*.h5
+!data/*.csv
+!data/README.md
+
 # Python Bytecode & Environments
 __pycache__/
 *.py[cod]

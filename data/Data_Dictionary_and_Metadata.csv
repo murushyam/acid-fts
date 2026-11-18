@@ -1,0 +1,28 @@
+Variable_Name,Category,Physical_Unit,Primary_Source,Description
+fire_weather_index,Target / Dynamic Fire Index,Dimensionless (FWI),ECMWF CEMS / ERA5,Canadian Forest Fire Weather Index (continuous daily fire danger metric)
+firms_fire_mask,Target / Satellite Active Fire,Pixels (integer count/day),NASA MODIS MOD14A1/MYD14A1 (FIRMS),Daily active thermal anomaly fire pixel count across the reserve
+modis_burn_date,Target / Satellite Burnt Area,km²/day,NASA MODIS MCD64A1 C6 (500m),Daily burned area reconstructed from 500m MODIS burn-date detections
+drought_code,Dynamic Fuel Moisture Index,Dimensionless (DC),ECMWF CEMS / ERA5,Deep compact organic layer moisture content indicator (slow response ~52 days)
+build_up_index,Dynamic Fuel Moisture Index,Dimensionless (BUI),ECMWF CEMS / ERA5,Total fuel available for combustion combining DMC and DC
+initial_spread_index,Dynamic Fire Behavior Index,Dimensionless (ISI),ECMWF CEMS / ERA5,Expected rate of fire spread combining FFMC and surface wind speed
+fine_fuel_moisture_code,Dynamic Fuel Moisture Index,Dimensionless (FFMC),ECMWF CEMS / ERA5,Surface litter and fine fuel moisture content indicator (fast response ~16 hours)
+duff_moisture_code,Dynamic Fuel Moisture Index,Dimensionless (DMC),ECMWF CEMS / ERA5,Loosely compacted organic duff layer moisture indicator (~12 days)
+keetch_byram_drought_index,Dynamic Drought Index,mm equivalent (KBDI),ECMWF CEMS / ERA5,Cumulative soil water deficiency metric for forest fire potential
+fire_danger_index,Dynamic Fire Index,Dimensionless (FDI),ECMWF CEMS / ERA5,McArthur Mark 5 forest fire danger rating index
+burning_index,Dynamic Fire Behavior Index,Dimensionless (BI),NFDRS / ERA5,National Fire Danger Rating System potential flame length indicator
+energy_release_component,Dynamic Fire Behavior Index,Dimensionless (ERC),NFDRS / ERA5,Available heat energy per unit area at the flaming front
+temperature_2m_mean,Dynamic Meteorology,°C,ECMWF ERA5-Land (0.1°),Daily mean 2-meter air temperature
+wind_speed_mean,Dynamic Meteorology,m/s,ECMWF ERA5-Land (0.1°),Daily mean 10-meter scalar wind speed
+specific_humidity_mean,Dynamic Meteorology,kg/kg,ECMWF ERA5-Land (0.1°),Daily mean 2-meter specific humidity
+vpd_mean,Dynamic Meteorology,hPa,ECMWF ERA5-Land (0.1°),Daily mean vapor pressure deficit
+relative_humidity_mean,Dynamic Meteorology,%,ECMWF ERA5-Land (0.1°),Daily mean 2-meter relative humidity
+soil_moisture_mean,Dynamic Land Surface,m³/m³,ECMWF ERA5-Land (0.1°),Daily mean volumetric top-layer soil moisture (0-7 cm)
+total_precipitation_sum,Dynamic Meteorology,mm/day,ECMWF ERA5-Land (0.1°),Daily accumulated surface precipitation
+UINFDR,Engineered Fire Index,Dimensionless,Derived (ACID-FTS),Unified Normalized Fire Danger Rating index
+HDWI,Engineered Fire Index,m/s · hPa,Derived (ACID-FTS),Hot-Dry-Windy Index (Wind Speed × Vapor Pressure Deficit)
+elevation,Static Topographic,m a.s.l.,NASA SRTM 30m DEM,Regional mean terrain elevation above sea level
+slope,Static Topographic,degrees (°),NASA SRTM 30m DEM,Regional mean terrain slope gradient
+northness,Static Circular Aspect (Eq. 1),"Dimensionless [-1, 1]",NASA SRTM 30m DEM,Meridional circular aspect component cos(Aspect)
+eastness,Static Circular Aspect (Eq. 1),"Dimensionless [-1, 1]",NASA SRTM 30m DEM,Zonal circular aspect component sin(Aspect)
+dist_road,Static Anthropogenic,meters (m),OpenStreetMap (OSM),Mean Euclidean distance to nearest road network
+rural_population,Static Anthropogenic,persons/km²,WorldPop (1 km),Regional mean rural population density
